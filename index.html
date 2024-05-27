@@ -30,13 +30,13 @@
       mediaRecorder = new MediaRecorder(stream);
 
       mediaRecorder.ondataavailable = e => {
-        const blob = new Blob([e.data], { type: 'audio/webm; codecs=opus' });
-        const audioUrl = URL.createObjectURL(blob);
-
-        const audio = document.createElement('audio');
-        audio.controls = true;
-        audio.src = audioUrl;
-        audio.dataset.blob = blob; // 將 blob 存儲在 audio 的 dataset 中
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64Audio = reader.result;
+          const audio = document.createElement('audio');
+          audio.controls = true;
+          audio.src = base64Audio;
+          audio.dataset.blob = blob; // 將 blob 存儲在 audio 的 dataset 中
 
         audio.onloadedmetadata = () => {
           const durationSpan = document.createElement('span');
@@ -60,6 +60,7 @@
 
       startBtn.disabled = true;
       stopBtn.disabled = false;
+        reader.readAsDataURL(e.data);
     });
 
     stopBtn.addEventListener('click', () => {
