@@ -31,11 +31,21 @@
       mediaRecorder = new MediaRecorder(stream);
 
       mediaRecorder.ondataavailable = e => {
-  const blob = new Blob([e.data], { type: 'audio/webm; codecs=opus' });
-  const audioUrl = URL.createObjectURL(blob);
-  const audio = document.createElement('audio');
-  audio.controls = true;
-  audio.src = audioUrl;
+      const blob = new Blob([e.data], { type: 'audio/webm; codecs=opus' });
+      const audioUrl = URL.createObjectURL(blob);
+    
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.src = audioUrl;
+    
+      // 将 blob 对象存储在 audio 元素的 dataset 中
+      audio.dataset.blob = blob;
+    
+      // 在 audio 元素播放完毕后释放 blob 对象
+      audio.onended = () => {
+        URL.revokeObjectURL(audio.src);
+        audio.dataset.blob = null; // 释放 blob 对象
+      };
 
   const timeElapsed = Date.now() - startTime;
   audio.dataset.startTime = timeElapsed / 1000;
@@ -45,11 +55,6 @@
     const durationSpan = document.createElement('span');
     durationSpan.textContent = ` (${audio.duration.toFixed(2)}s)`;
     container.appendChild(durationSpan);
-  };
-
-  // 释放 URL 对象
-  audio.onended = () => {
-    URL.revokeObjectURL(audio.src);
   };
 
   const container = document.createElement('div');
