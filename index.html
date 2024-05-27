@@ -1,73 +1,131 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>MediaRecorder 錄音示例1</title>
+  <title>即時語音問答</title>
   <style>
-    #recordings {
+    #chatbox {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+      height: 300px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+      padding: 10px;
     }
-    .audio-container {
-      margin: 5px;
+    .message {
+      margin-bottom: 10px;
+    }
+    .user-message {
+      text-align: right;
+    }
+    .bot-message {
+      text-align: left;
+    }
+    .recording-indicator {
+      width: 10px;
+      height: 10px;
+      background-color: red;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 5px;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      50% {
+        background-color: transparent;
+      }
     }
   </style>
 </head>
 <body>
-  <button id="startBtn">開始錄音</button>
-  <button id="stopBtn" disabled>停止錄音</button>
-  <div id="recordings"></div>
+  <div id="chatbox"></div>
+  <button id="startBtn">開始對話</button>
+  <button id="stopBtn" disabled>結束對話</button>
+  <span id="recordingIndicator" class="recording-indicator" style="display:none;"></span>
 
   <script>
+    const chatbox = document.getElementById('chatbox');
     const startBtn = document.getElementById('startBtn');
     const stopBtn = document.getElementById('stopBtn');
-    const recordingsDiv = document.getElementById('recordings');
+    const recordingIndicator = document.getElementById('recordingIndicator');
 
     let mediaRecorder;
-    let startTime = 0;
+    let isRecording = false;
 
     startBtn.addEventListener('click', async () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
-
-      mediaRecorder.ondataavailable = e => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64Audio = reader.result; // 音频数据转换为 Base64
-
-          const audio = document.createElement('audio');
-          audio.controls = true;
-          audio.src = base64Audio; // 使用 Base64 数据作为 src
-
-          const timeElapsed = Date.now() - startTime;
-          audio.dataset.startTime = timeElapsed / 1000;
-
-          audio.onloadedmetadata = () => {
-            const durationSpan = document.createElement('span');
-            durationSpan.textContent = ` (${audio.duration.toFixed(2)}s)`;
-            container.appendChild(durationSpan);
-          };
-
-          const container = document.createElement('div');
-          container.classList.add('audio-container');
-          container.appendChild(audio);
-          recordingsDiv.appendChild(container);
-          mediaRecorder.stop();
-        };
-        reader.readAsDataURL(e.data); // 读取 Blob 数据并转换为 Base64
-      };
-
-      mediaRecorder.start(4000);
-      startTime = Date.now();
+      startRecording();
 
       startBtn.disabled = true;
       stopBtn.disabled = false;
     });
 
     stopBtn.addEventListener('click', () => {
-      mediaRecorder.stop();
+      stopRecording();
       startBtn.disabled = false;
       stopBtn.disabled = true;
     });
+
+    function startRecording() {
+      isRecording = true;
+      recordingIndicator.style.display = 'inline-block';
+      const chunks = [];
+
+      mediaRecorder.ondataavailable = e => chunks.push(e.data);
+
+      mediaRecorder.onstop = async () => {
+        recordingIndicator.style.display = 'none';
+        const blob = new Blob(chunks, { type: 'audio/webm; codecs=opus' });
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64Audio = reader.result;
+          const message = await processAudio(base64Audio);
+          displayMessage('user', base64Audio, message);
+          if (isRecording) {
+            startRecording(); // 继续录音
+          }
+        };
+        reader.readAsDataURL(blob);
+      };
+
+      mediaRecorder.start();
+      setTimeout(() => mediaRecorder.stop(), 4000); // 4 秒后停止录音
+    }
+
+    function stopRecording() {
+      isRecording = false;
+      mediaRecorder.stop();
+    }
+
+    function displayMessage(role, audioData, text = '') {
+      const messageDiv = document.createElement('div');
+      messageDiv.classList.add('message', `${role}-message`);
+
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.src = audioData;
+      messageDiv.appendChild(audio);
+
+      if (text) {
+        const textSpan = document.createElement('span');
+        textSpan.textContent = text;
+        messageDiv.appendChild(textSpan);
+      }
+
+      chatbox.appendChild(messageDiv);
+      chatbox.scrollTop = chatbox.scrollHeight; // 自動滾動到底部
+    }
+
+    async function processAudio(base64Audio) {
+      // 在这里添加你的语音处理逻辑，例如发送到后端 API 进行语音转文字
+      // 然后返回处理后的文字信息
+      // 这里只是一个示例，返回模拟的语音转文字结果
+      return new Promise(resolve => {
+        setTimeout(() => {
+          resolve('（这里是语音转文字的示例结果）');
+        }, 1000); // 模拟处理时间
+      });
+    }
   </script>
 </body>
 </html>
