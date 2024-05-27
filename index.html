@@ -32,27 +32,27 @@
       mediaRecorder.ondataavailable = e => {
         const reader = new FileReader();
         reader.onloadend = () => {
-          const base64Audio = reader.result;
+          const base64Audio = reader.result; // 音频数据转换为 Base64
+
           const audio = document.createElement('audio');
           audio.controls = true;
-          audio.src = base64Audio;
-          audio.dataset.blob = blob; // 將 blob 存儲在 audio 的 dataset 中
+          audio.src = base64Audio; // 使用 Base64 数据作为 src
 
-        audio.onloadedmetadata = () => {
-          const durationSpan = document.createElement('span');
-          durationSpan.textContent = ` (${audio.duration.toFixed(2)}s)`;
-          container.appendChild(durationSpan);
+          const timeElapsed = Date.now() - startTime;
+          audio.dataset.startTime = timeElapsed / 1000;
+
+          audio.onloadedmetadata = () => {
+            const durationSpan = document.createElement('span');
+            durationSpan.textContent = ` (${audio.duration.toFixed(2)}s)`;
+            container.appendChild(durationSpan);
+          };
+
+          const container = document.createElement('div');
+          container.classList.add('audio-container');
+          container.appendChild(audio);
+          recordingsDiv.appendChild(container);
         };
-
-        audio.onended = () => {
-          URL.revokeObjectURL(audio.src);
-          audio.dataset.blob = null; // 釋放 blob
-        };
-
-        const container = document.createElement('div');
-        container.classList.add('audio-container');
-        container.appendChild(audio);
-        recordingsDiv.appendChild(container);
+        reader.readAsDataURL(e.data); // 读取 Blob 数据并转换为 Base64
       };
 
       mediaRecorder.start(4000);
@@ -60,7 +60,6 @@
 
       startBtn.disabled = true;
       stopBtn.disabled = false;
-        reader.readAsDataURL(e.data);
     });
 
     stopBtn.addEventListener('click', () => {
