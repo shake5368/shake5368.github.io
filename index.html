@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>MediaRecorder 錄音示例</title>
+  <title>MediaRecorder 錄音示例1</title>
   <style>
     #recordings {
       display: flex;
@@ -51,10 +51,9 @@
           container.classList.add('audio-container');
           container.appendChild(audio);
           recordingsDiv.appendChild(container);
+          mediaRecorder.stop();
         };
         reader.readAsDataURL(e.data); // 读取 Blob 数据并转换为 Base64
-        mediaRecorder.stop();
-        mediaRecorder.start(4000);
       };
 
       mediaRecorder.start(4000);
