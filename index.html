@@ -1,72 +1,88 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>MediaRecorder 錄音示例</title>
+  <title>即時語音問答</title>
   <style>
-    #recordings {
+    #chatbox {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+      height: 300px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+      padding: 10px;
     }
-    .audio-container {
-      margin: 5px;
+    .message {
+      margin-bottom: 10px;
+    }
+    .user-message {
+      text-align: right;
+    }
+    .bot-message {
+      text-align: left;
     }
   </style>
 </head>
 <body>
-  <button id="startBtn">開始錄音</button>
-  <button id="stopBtn" disabled>停止錄音</button>
-  <div id="recordings"></div>
+  <div id="chatbox"></div>
+  <button id="recordBtn">錄音</button>
 
   <script>
-    const startBtn = document.getElementById('startBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const recordingsDiv = document.getElementById('recordings');
+    const chatbox = document.getElementById('chatbox');
+    const recordBtn = document.getElementById('recordBtn');
 
     let mediaRecorder;
-    let startTime = 0;
 
-    startBtn.addEventListener('click', async () => {
+    recordBtn.addEventListener('click', async () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
+      const chunks = [];
 
-      mediaRecorder.ondataavailable = e => {
+      mediaRecorder.ondataavailable = e => chunks.push(e.data);
+
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'audio/webm; codecs=opus' });
         const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64Audio = reader.result; // 音频数据转换为 Base64
-
-          const audio = document.createElement('audio');
-          audio.controls = true;
-          audio.src = base64Audio; // 使用 Base64 数据作为 src
-
-          const timeElapsed = Date.now() - startTime;
-          audio.dataset.startTime = timeElapsed / 1000;
-
-          audio.onloadedmetadata = () => {
-            const durationSpan = document.createElement('span');
-            durationSpan.textContent = ` (${audio.duration.toFixed(2)}s)`;
-            container.appendChild(durationSpan);
-          };
-
-          const container = document.createElement('div');
-          container.classList.add('audio-container');
-          container.appendChild(audio);
-          recordingsDiv.appendChild(container);
+        reader.onloadend = async () => {
+          const base64Audio = reader.result;
+          const message = await processAudio(base64Audio); // 假设你有一个处理音频的函数
+          displayMessage('user', base64Audio, message);
         };
-        reader.readAsDataURL(e.data); // 读取 Blob 数据并转换为 Base64
+        reader.readAsDataURL(blob);
       };
 
-      mediaRecorder.start(4000);
-      startTime = Date.now();
-
-      startBtn.disabled = true;
-      stopBtn.disabled = false;
+      mediaRecorder.start();
+      recordBtn.textContent = '停止錄音';
+      recordBtn.onclick = () => {
+        mediaRecorder.stop();
+        recordBtn.textContent = '錄音';
+        recordBtn.onclick = recordBtn.onclick; // 重置 onclick 事件
+      };
     });
 
-    stopBtn.addEventListener('click', () => {
-      mediaRecorder.stop();
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
-    });
+    function displayMessage(role, audioData, text = '') {
+      const messageDiv = document.createElement('div');
+      messageDiv.classList.add('message', `${role}-message`);
+
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.src = audioData;
+      messageDiv.appendChild(audio);
+
+      if (text) {
+        const textSpan = document.createElement('span');
+        textSpan.textContent = text;
+        messageDiv.appendChild(textSpan);
+      }
+
+      chatbox.appendChild(messageDiv);
+      chatbox.scrollTop = chatbox.scrollHeight; // 自動滾動到底部
+    }
+
+    async function processAudio(base64Audio) {
+      // 在這裡添加你的語音處理邏輯，例如發送到後端 API 進行語音轉文字
+      // 然後返回處理後的文字訊息
+      return '（這裡是語音轉文字的結果）'; // 範例
+    }
   </script>
 </body>
 </html>
