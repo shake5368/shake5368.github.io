@@ -31,11 +31,12 @@
       mediaRecorder = new MediaRecorder(stream);
 
       mediaRecorder.ondataavailable = e => {
-        const blob = new Blob([e.data], { type: 'audio/webm; codecs=opus' });
-        const audioUrl = URL.createObjectURL(blob);
-        const audio = document.createElement('audio');
-        audio.controls = true;
-        audio.src = audioUrl;
+  const blob = new Blob([e.data], { type: 'audio/webm; codecs=opus' });
+  // 为每个 blob 创建唯一的 URL
+  const audioUrl = URL.createObjectURL(blob); 
+  const audio = document.createElement('audio');
+  audio.controls = true;
+  audio.src = audioUrl;
 
         const timeElapsed = Date.now() - startTime;
         audio.dataset.startTime = timeElapsed / 1000;
