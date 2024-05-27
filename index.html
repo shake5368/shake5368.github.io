@@ -7,7 +7,6 @@
       display: flex;
       flex-wrap: wrap;
     }
-
     .audio-container {
       margin: 5px;
     }
@@ -31,37 +30,30 @@
       mediaRecorder = new MediaRecorder(stream);
 
       mediaRecorder.ondataavailable = e => {
-      const blob = new Blob([e.data], { type: 'audio/webm; codecs=opus' });
-      const audioUrl = URL.createObjectURL(blob);
-    
-      const audio = document.createElement('audio');
-      audio.controls = true;
-      audio.src = audioUrl;
-    
-      // 将 blob 对象存储在 audio 元素的 dataset 中
-      audio.dataset.blob = blob;
-    
-      // 在 audio 元素播放完毕后释放 blob 对象
-      audio.onended = () => {
-        URL.revokeObjectURL(audio.src);
-        audio.dataset.blob = null; // 释放 blob 对象
+        const blob = new Blob([e.data], { type: 'audio/webm; codecs=opus' });
+        const audioUrl = URL.createObjectURL(blob);
+
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = audioUrl;
+        audio.dataset.blob = blob; // 將 blob 存儲在 audio 的 dataset 中
+
+        audio.onloadedmetadata = () => {
+          const durationSpan = document.createElement('span');
+          durationSpan.textContent = ` (${audio.duration.toFixed(2)}s)`;
+          container.appendChild(durationSpan);
+        };
+
+        audio.onended = () => {
+          URL.revokeObjectURL(audio.src);
+          audio.dataset.blob = null; // 釋放 blob
+        };
+
+        const container = document.createElement('div');
+        container.classList.add('audio-container');
+        container.appendChild(audio);
+        recordingsDiv.appendChild(container);
       };
-
-  const timeElapsed = Date.now() - startTime;
-  audio.dataset.startTime = timeElapsed / 1000;
-
-  // 显示片段时长
-  audio.onloadedmetadata = () => {
-    const durationSpan = document.createElement('span');
-    durationSpan.textContent = ` (${audio.duration.toFixed(2)}s)`;
-    container.appendChild(durationSpan);
-  };
-
-  const container = document.createElement('div');
-  container.classList.add('audio-container');
-  container.appendChild(audio);
-  recordingsDiv.appendChild(container);
-};
 
       mediaRecorder.start(4000);
       startTime = Date.now();
