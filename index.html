@@ -276,8 +276,12 @@ audioBase64 = event.utterance.output[event.charIndex].split(',')[1]; // 取得 B
 }
 };
 // 等待語音合成完成
-await new Promise(resolve => utterance.onend = resolve );
-return audioBase64;
+await new Promise(resolve => {
+  utterance.onend = (event) => {
+    console.log(audioBase64);
+    resolve(audioBase64);
+  };
+});
 }
 // 將 Blob 轉換為 Base64 字串
 function blobToBase64(blob) {
