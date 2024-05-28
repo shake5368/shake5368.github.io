@@ -108,9 +108,7 @@ if(botTranscript.length == 0)
 botTranscript.push("請提供更具體的資訊，我將盡力為您解答。");
 }
 
-const voiceBlob = speakToVoice(botTranscript, myUUID);
-
-  console.log(voiceBlob);
+appendMessage('bot', botTranscript, myUUID);
   
 // 產生建議
 const generatedSuggestions = generateSuggestions('天氣');
@@ -165,6 +163,7 @@ function appendMessage(sender, content, uuid) {
 const messageElement = document.createElement('div');
 messageElement.classList.add('message', sender);
 messageElement.innerHTML = `<div class="message-content">${content}</div>`;
+if(sender=='user'){
 const audioBlob = audioMap.get(uuid);
 const audio = document.createElement('audio');
 audio.style.display = 'none';
@@ -174,6 +173,15 @@ messageElement.addEventListener('click', function() {
 const audioElement = messageElement.querySelector('audio');
 audioElement.play();
 });
+}
+else
+{
+  
+messageElement.addEventListener('click', function() {
+speakToVoice(content, uuid);
+});
+
+}
 transcript.appendChild(messageElement);
 // 自動滾動到底部
 transcript.scrollTop = transcript.scrollHeight;
@@ -264,24 +272,7 @@ const desiredVoice = speechSynthesis.getVoices().find(voice => voice.name === 'G
 if (desiredVoice) {
 utterance.voice = desiredVoice;
 }
-let audioBase64;
-
-// 將語音合成結果儲存為 Base64
-speechSynthesis.addEventListener('voiceschanged', () => {
 speechSynthesis.speak(utterance);
-});
-utterance.onboundary = (event) => {
-if (event.name === 'mark') {
-audioBase64 = event.utterance.output[event.charIndex].split(',')[1]; // 取得 Base64 部分
-}
-};
-// 等待語音合成完成
-await new Promise(resolve => {
-  utterance.onend = (event) => {
-    console.log(audioBase64);
-    resolve(audioBase64);
-  };
-});
 }
 // 將 Blob 轉換為 Base64 字串
 function blobToBase64(blob) {
